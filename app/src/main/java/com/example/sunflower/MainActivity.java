@@ -3,16 +3,30 @@ package com.example.sunflower;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Pair;
+import android.util.Size;
+import android.view.Surface;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,5 +82,141 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return true;
+    }
+
+    private int previewWidth = 0;
+    private int previewHeight = 0;
+    private int sensorOrientation = 0;
+
+    private Bitmap rgbFrameBitmap = null;
+
+    protected void setFragment() {
+        Size inputSize = cls.getModelInputSize();
+        String cameraId = chooseCamera();
+
+        if(inputSize.getWidth() > 0 && inputSize.getHeight() > 0 && cameraId != null) {
+            Fragment fragment = CameraFragment.newInstance(
+                    (size, rotation) -> {
+                        previewWidth = size.getWidth();
+                        previewHeight = size.getHeight();
+                        sensorOrientation = rotation - getScreenOrientation();
+                    },
+                    reader->processImage(reader),
+                    inputSize,
+                    cameraId);
+
+            getFragmentManager().beginTransaction().replace(
+                    R.id.fragment, fragment).commit();
+        } else {
+            Toast.makeText(this, "Can't find camera", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
+    private int getScreenOrientation() {
+        switch (getDisplay().getRotation()) {
+            case Surface.ROTATION_270:
+                return 270;
+            case Surface.ROTATION_180:
+                return 180;
+            case Surface.ROTATION_90:
+                return 90;
+            default:
+                return 0;
+        }
+    }
+
+    private String chooseCamera() {
+        final CameraManager manager =
+                (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        try {
+            for (final String cameraID : manager.getCameraIdList()) {
+                final CameraCharacteristics characteristics =
+                        manager.getCameraCharacteristics(cameraID);
+
+                final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+
+                if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    return cameraID;
+                }
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private boolean isProcessingFrame = false;
+
+    protected void processImage(ImageReader reader) {
+        if (previewWidth == 0 || previewHeight == 0) {
+            return;
+        }
+
+        if (rgbFrameBitmap == null) {
+            rgbFrameBitmap = Bitmap.createBitmap(
+                    previewWidth, previewHeight,
+                    Bitmap.Config.ARGB_8888);
+        }
+
+        if (isProcessingFrame) {
+            return;
+        }
+
+        isProcessingFrame = true;
+
+        final Image image = reader.acquireLatestImage();
+        if (image == null) {
+            isProcessingFrame = false;
+            return;
+        }
+
+        YuvToRgbConverter.yuvToRgb(this, image, rgbFrameBitmap);
+
+        runInBackground(() -> {
+            if (cls != null && cls.isInitialized()) {
+                final Pair<String, Float> output = cls.classify(rgbFrameBitmap, sensorOrientation);
+
+                String resultStr = String.format(Locale.ENGLISH,
+                        "class : %s, prob : %.2f%%",
+                        output.first, output.second * 100);
+                textView.setText(resultStr);
+            }
+            image.close();
+            isProcessingFrame = false;
+        });
+
+    }
+
+    private HandlerThread handlerThread;
+    private Handler handler;
+
+    @Override
+    public synchronized void onResume() {
+        super.onResume();
+
+        handlerThread = new HandlerThread("Inference");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+    }
+
+    @Override
+    public synchronized void onPause() {
+        handlerThread.quitSafely();
+        try {
+            handlerThread.join();
+            handlerThread = null;
+            handler = null;
+        } catch (final InterruptedException e) {
+            e.printStackTrace();
+        }
+        super.onPause();
+    }
+
+    protected synchronized void runInBackground(final Runnable r) {
+        if (handler != null) {
+            handler.post(r);
+        }
     }
 }
