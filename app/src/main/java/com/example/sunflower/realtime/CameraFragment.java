@@ -26,6 +26,7 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.Surface;
@@ -108,15 +109,15 @@ public class CameraFragment extends Fragment {
             openCamera(autoFitTextureView.getWidth(), autoFitTextureView.getHeight());
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.R)
     private final TextureView.SurfaceTextureListener surfaceTextureListener =
             new TextureView.SurfaceTextureListener() {
-                @RequiresApi(api = Build.VERSION_CODES.R)
+
                 @Override
                 public void onSurfaceTextureAvailable(final SurfaceTexture texture, final int width, final int height) {
                     openCamera(width, height);
                 }
 
-                @RequiresApi(api = Build.VERSION_CODES.R)
                 @Override
                 public void onSurfaceTextureSizeChanged(final SurfaceTexture texture, final int width, final int height) {
                     configureTransform(width,height);

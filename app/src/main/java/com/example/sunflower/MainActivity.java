@@ -22,6 +22,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.SystemClock;
+import android.util.Log;
 import android.util.Pair;
 import android.util.Size;
 import android.view.Surface;
@@ -41,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView textView;
     private Classifier cls;
+    private TextView logText;
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         textView = findViewById(R.id.textView);
+        logText = findViewById(R.id.logText);
 
         cls = new Classifier(this);
         try {
@@ -142,6 +146,7 @@ public class MainActivity extends AppCompatActivity {
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     protected int getScreenOrientation() {
+        Log.v( "rotate", String.valueOf(getDisplay().getRotation()));
         switch (getDisplay().getRotation()) {
             case Surface.ROTATION_270:
                 return 270;
@@ -183,9 +188,13 @@ public class MainActivity extends AppCompatActivity {
 
         runInBackground(() -> {
             if (cls != null && cls.isInitialized()) {
+                final long startTime = SystemClock.uptimeMillis();
                 final Pair<String, Float> output = cls.classify(rgbFrameBitmap, sensorOrientation);
 
+                final long elapsedTime = SystemClock.uptimeMillis() - startTime;
                 runOnUiThread(() -> {
+                    String logStr = elapsedTime + " ms";
+                    logText.setText(logStr);
                     String resultStr = String.format(Locale.ENGLISH, "class : %s, prob : %.2f%%", output.first, output.second * 100);
                     textView.setText(resultStr);
                 });

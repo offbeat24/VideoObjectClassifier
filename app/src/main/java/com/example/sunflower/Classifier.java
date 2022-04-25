@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.util.Pair;
 import android.util.Size;
 
+import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.Tensor;
 import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.common.ops.NormalizeOp;
@@ -20,6 +21,8 @@ import org.tensorflow.lite.support.model.Model;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +45,7 @@ public class Classifier {
     private boolean isInitialized = false;
 
     public void init() throws IOException {
-        model = Model.createModel(context, MODEL_NAME);
+        model = createMultiThreadModel(2);
 
         initModelShape();
         labels = FileUtil.loadLabels(context, LABEL_FILE);
@@ -136,5 +139,19 @@ public class Classifier {
 
     public Pair<String, Float> classify(Bitmap image) {
         return classify(image, 0);
+    }
+
+    private Model createMultiThreadModel(int nThreads) throws IOException {
+        Model.Options.Builder optionsBuilder = new Model.Options.Builder();
+        optionsBuilder.setNumThreads(nThreads);
+        return Model.createModel(context, MODEL_NAME, optionsBuilder.build());
+    }
+
+    private Interpreter createMultiThreadInterpreter(int nThreads) throws IOException {
+        Interpreter.Options options = new Interpreter.Options();
+        options.setNumThreads(nThreads);
+        ByteBuffer model = FileUtil.loadMappedFile(context, MODEL_NAME);
+        model.order(ByteOrder.nativeOrder());
+        return new Interpreter(model, options);
     }
 }
