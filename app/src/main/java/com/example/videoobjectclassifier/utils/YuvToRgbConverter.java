@@ -1,4 +1,4 @@
-package com.example.sunflower.utils;
+package com.example.videoobjectclassifier.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;

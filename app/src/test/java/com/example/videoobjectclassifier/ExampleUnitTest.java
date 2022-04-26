@@ -1,4 +1,4 @@
-package com.example.sunflower;
+package com.example.videoobjectclassifier;
 
 import org.junit.Test;
 

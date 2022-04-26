@@ -1,4 +1,4 @@
-package com.example.sunflower.realtime;
+package com.example.videoobjectclassifier.realtime;
 
 import android.content.Context;
 import android.util.AttributeSet;

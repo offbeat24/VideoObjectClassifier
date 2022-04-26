@@ -1,4 +1,4 @@
-package com.example.sunflower.realtime;
+package com.example.videoobjectclassifier.realtime;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -26,7 +26,6 @@ import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.util.Log;
 import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.Surface;
@@ -35,7 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.example.sunflower.R;
+import com.example.videoobjectclassifier.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;

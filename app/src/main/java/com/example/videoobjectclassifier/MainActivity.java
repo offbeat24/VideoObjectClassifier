@@ -1,4 +1,4 @@
-package com.example.sunflower;
+package com.example.videoobjectclassifier;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -8,9 +8,7 @@ import androidx.fragment.app.Fragment;
 
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.camera2.CameraAccessException;
@@ -31,8 +29,9 @@ import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.sunflower.realtime.CameraFragment;
-import com.example.sunflower.utils.YuvToRgbConverter;
+import com.example.videoobjectclassifier.R;
+import com.example.videoobjectclassifier.realtime.CameraFragment;
+import com.example.videoobjectclassifier.utils.YuvToRgbConverter;
 
 import java.io.IOException;
 import java.util.Locale;
